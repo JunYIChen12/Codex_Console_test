@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  docs:
+    name: Documentation checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate tracked markdown
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t markdown_files < <(git ls-files '*.md')
+          if [ "${#markdown_files[@]}" -eq 0 ]; then
+            echo "No markdown files found."
+            exit 1
+          fi
+
+          git diff --check
+
+          if grep -nE '<<<<<<<|>>>>>>>' "${markdown_files[@]}"; then
+            echo "Found unresolved conflict marker in markdown files."
+            exit 1
+          fi
